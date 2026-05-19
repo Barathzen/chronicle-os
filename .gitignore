@@ -73,3 +73,6 @@ backend/alembic/versions/__pycache__/
 *.swp
 *.swo
 ~*
+
+# Project docs to ignore (local skills file)
+docs/SKILLS.md
