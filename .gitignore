@@ -76,3 +76,9 @@ backend/alembic/versions/__pycache__/
 
 # Project docs to ignore (local skills file)
 docs/SKILLS.md
+
+# Backend alembic and env files (local templates and configs)
+backend/alembic.ini
+backend/alembic/script.py.mako
+# Local example env (if you prefer not to track it)
+backend/.env.example
