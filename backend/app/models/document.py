@@ -1,4 +1,5 @@
 from sqlalchemy import Column, Integer, String, Text, ForeignKey, DateTime, JSON, func
+from pgvector.sqlalchemy import Vector
 from sqlalchemy.orm import relationship
 from app.db.base import Base
 
@@ -12,6 +13,8 @@ class Document(Base):
     owner_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     # `metadata` is a reserved attribute name on Declarative base; store in DB column `metadata`
     metadata_ = Column('metadata', JSON, nullable=True)
+    # embedding vector stored with pgvector extension
+    embedding = Column(Vector(1536), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     owner = relationship("User", back_populates="documents")

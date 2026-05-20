@@ -6,7 +6,9 @@ from jose import jwt
 
 from app.core.config import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# Use a pure-Python compatible scheme by default to avoid C-extension
+# dependency issues in test/dev environments. Production can switch to bcrypt.
+pwd_context = CryptContext(schemes=["sha256_crypt"], deprecated="auto")
 
 
 def get_password_hash(password: str) -> str:

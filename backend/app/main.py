@@ -24,3 +24,5 @@ async def root():
 
 # include routers
 app.include_router(auth_router.router, prefix="/auth", tags=["auth"])
+from app.api.routes import documents as docs_router
+app.include_router(docs_router.router, prefix="/documents", tags=["documents"])
