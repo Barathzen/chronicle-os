@@ -32,3 +32,4 @@ pgvector
 numpy
 requests
 openai
+pytest-asyncio

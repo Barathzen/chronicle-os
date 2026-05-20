@@ -9,9 +9,9 @@ class DocumentCreate(BaseModel):
 
 
 class DocumentUpdate(BaseModel):
-    title: Optional[str]
-    content: Optional[str]
-    metadata: Optional[Dict[str, Any]]
+    title: Optional[str] = None
+    content: Optional[str] = None
+    metadata: Optional[Dict[str, Any]] = None
 
 
 class DocumentOut(BaseModel):

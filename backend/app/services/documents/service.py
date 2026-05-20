@@ -27,9 +27,20 @@ async def list_documents(db: AsyncSession, owner_id: Optional[int] = None) -> Li
 
 
 async def update_document(db: AsyncSession, doc_id: int, data: dict) -> Optional[Document]:
-    await db.execute(update(Document).where(Document.id == doc_id).values(**data))
+    # Fetch, update attributes and commit to ensure compatibility with async sessions and tests
+    doc = await get_document(db, doc_id)
+    if doc is None:
+        return None
+    for k, v in data.items():
+        # map metadata key to metadata_ column
+        if k == "metadata":
+            setattr(doc, "metadata_", v)
+        else:
+            setattr(doc, k, v)
+    db.add(doc)
     await db.commit()
-    return await get_document(db, doc_id)
+    await db.refresh(doc)
+    return doc
 
 
 async def delete_document(db: AsyncSession, doc_id: int) -> None:

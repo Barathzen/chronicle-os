@@ -15,16 +15,27 @@ from app.services.documents.service import (
 router = APIRouter()
 
 
+def _serialize_doc(doc) -> dict:
+    return {
+        "id": doc.id,
+        "title": doc.title,
+        "content": doc.content,
+        "owner_id": doc.owner_id,
+        "metadata": getattr(doc, "metadata_") if hasattr(doc, "metadata_") else None,
+        "created_at": doc.created_at.isoformat() if getattr(doc, "created_at", None) is not None else None,
+    }
+
+
 @router.post("/", response_model=DocumentOut, status_code=status.HTTP_201_CREATED)
 async def create(doc_in: DocumentCreate, db: AsyncSession = Depends(get_db)):
     doc = await create_document(db, doc_in.title, doc_in.content, None, doc_in.metadata)
-    return doc
+    return _serialize_doc(doc)
 
 
 @router.get("/", response_model=List[DocumentOut])
 async def list_docs(owner_id: Optional[int] = None, db: AsyncSession = Depends(get_db)):
     docs = await list_documents(db, owner_id)
-    return docs
+    return [_serialize_doc(d) for d in docs]
 
 
 @router.get("/{doc_id}", response_model=DocumentOut)
@@ -32,7 +43,7 @@ async def read_doc(doc_id: int, db: AsyncSession = Depends(get_db)):
     doc = await get_document(db, doc_id)
     if not doc:
         raise HTTPException(status_code=404, detail="Document not found")
-    return doc
+    return _serialize_doc(doc)
 
 
 @router.put("/{doc_id}", response_model=DocumentOut)
@@ -41,7 +52,7 @@ async def update_doc(doc_id: int, doc_in: DocumentUpdate, db: AsyncSession = Dep
     doc = await update_document(db, doc_id, data)
     if not doc:
         raise HTTPException(status_code=404, detail="Document not found")
-    return doc
+    return _serialize_doc(doc)
 
 
 @router.delete("/{doc_id}", status_code=status.HTTP_204_NO_CONTENT)
