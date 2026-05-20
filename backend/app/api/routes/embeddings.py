@@ -1,12 +1,24 @@
 from typing import Any
 from fastapi import APIRouter, Depends, HTTPException
+import os
+
+from app.services.embeddings.service import Embedder
 from pydantic import BaseModel
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.database import get_db
-from app.services.embeddings.adapters import OpenAIEmbedder, OllamaEmbedder, asyncio
+from app.services.embeddings.adapters import OpenAIEmbedder, OllamaEmbedder
 from app.services.embeddings.service import compute_and_store_embedding, semantic_search
+
+
+async def get_embedder() -> Embedder:
+    try:
+        if "OPENAI_API_KEY" in os.environ:
+            return OpenAIEmbedder()
+        return OllamaEmbedder()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 router = APIRouter()
@@ -18,20 +30,11 @@ class EmbedResponse(BaseModel):
 
 
 @router.post("/documents/{doc_id}/embed", response_model=EmbedResponse)
-async def embed_document(doc_id: int, db: AsyncSession = Depends(get_db)) -> Any:
+async def embed_document(doc_id: int, db: AsyncSession = Depends(get_db), embedder: Embedder = Depends(get_embedder)) -> Any:
     """Compute embedding for a document using configured provider.
 
     The endpoint will read `OPENAI_API_KEY` or `OLLAMA_URL` from env to choose provider.
     """
-    # Choose provider
-    try:
-        if "OPENAI_API_KEY" in __import__("os").environ:
-            embedder = OpenAIEmbedder()
-        else:
-            embedder = OllamaEmbedder()
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
     try:
         doc = await compute_and_store_embedding(db, doc_id, embedder)
     except ValueError as e:
@@ -52,16 +55,7 @@ class SearchHit(BaseModel):
 
 
 @router.post("/search", response_model=list[SearchHit])
-async def search(req: SearchRequest, db: AsyncSession = Depends(get_db)) -> Any:
-    # pick provider to compute query embedding
-    try:
-        if "OPENAI_API_KEY" in __import__("os").environ:
-            embedder = OpenAIEmbedder()
-        else:
-            embedder = OllamaEmbedder()
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
+async def search(req: SearchRequest, db: AsyncSession = Depends(get_db), embedder: Embedder = Depends(get_embedder)) -> Any:
     q_vecs = await embedder.embed([req.query])
     if not q_vecs:
         raise HTTPException(status_code=500, detail="failed to compute query embedding")
