@@ -83,4 +83,3 @@ backend/alembic/script.py.mako
 # Local example env (if you prefer not to track it)
 backend/.env.example
 # Ignore auto-generated migration file if not needed
-backend/alembic/versions/1a2b3c4d5e6f_add_embedding_vector.py

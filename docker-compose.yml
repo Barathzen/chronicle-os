@@ -1,12 +1,14 @@
 version: "3.9"
 
 services:
-	postgres:
-		image: postgres:16
+
+	# Postgres with pgvector preinstalled
+	db:
+		image: ankane/pgvector:postgres-16
 		container_name: chronicle_postgres
 		environment:
 			POSTGRES_USER: postgres
-			POSTGRES_PASSWORD: password
+			POSTGRES_PASSWORD: postgres
 			POSTGRES_DB: chronicle_os
 		ports:
 			- "5432:5432"
@@ -20,6 +22,23 @@ services:
 			- "6379:6379"
 		volumes:
 			- redis_data:/data
+
+	backend:
+		build:
+			context: ./backend
+			dockerfile: Dockerfile
+		container_name: chronicle_backend
+		depends_on:
+			- db
+			- redis
+		environment:
+			DATABASE_URL: postgresql://postgres:postgres@db:5432/chronicle_os
+			REDIS_URL: redis://redis:6379/0
+			ENV: development
+		ports:
+			- "8000:8000"
+		volumes:
+			- ./backend:/app
 
 volumes:
 	postgres_data:
