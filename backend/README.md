@@ -102,3 +102,19 @@ Next steps I can help with
 - Add a CI workflow that builds the Docker image and runs tests using the compose stack.
 - Add a migration to safely drop/rename the JSON `embedding` column after conversion.
 - Harden the `backend/Dockerfile` for smaller images and better caching.
+
+CI (GitHub Actions)
+--------------------
+We include a CI workflow that runs tests on push and PRs. It starts a `pgvector`-enabled Postgres and Redis service, installs dependencies, runs Alembic migrations, and executes the test suite using the `dummy` embedder to avoid heavy model downloads.
+
+To run the same steps locally (useful for debugging CI):
+
+```bash
+# from repository root
+docker compose up -d
+cd backend
+alembic upgrade head
+EMBEDDER_PROVIDER=dummy pytest -q
+```
+
+If you want CI to test the sentence-transformers path, we can modify the workflow to cache and preinstall the model, but that will significantly increase runtime.

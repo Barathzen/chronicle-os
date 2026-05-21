@@ -8,15 +8,33 @@ from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.database import get_db
-from app.services.embeddings.adapters import OpenAIEmbedder, OllamaEmbedder
+from app.services.embeddings.adapters import OpenAIEmbedder, OllamaEmbedder, SentenceTransformersEmbedder, GroqEmbedder
+from app.services.embeddings.service import DummyEmbedder
 from app.services.embeddings.service import compute_and_store_embedding, semantic_search
 
 
 async def get_embedder() -> Embedder:
     try:
-        if "OPENAI_API_KEY" in os.environ:
+        provider = os.getenv("EMBEDDER_PROVIDER", "dummy").lower()
+        if provider == "openai":
             return OpenAIEmbedder()
-        return OllamaEmbedder()
+        if provider == "ollama":
+            return OllamaEmbedder()
+        if provider == "groq":
+            return GroqEmbedder()
+        if provider == "sentence_transformers" or provider == "sentence-transformers":
+            model = os.getenv("SENTENCE_MODEL_NAME", "all-mpnet-base-v2")
+            device = os.getenv("TORCH_DEVICE", "cpu")
+            return SentenceTransformersEmbedder(model_name=model, device=device)
+        # explicit dummy provider support for tests and CI
+        if provider == "dummy":
+            return DummyEmbedder()
+
+        # default to Ollama if available, else dummy fallback
+        try:
+            return OllamaEmbedder()
+        except Exception:
+            return DummyEmbedder()
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

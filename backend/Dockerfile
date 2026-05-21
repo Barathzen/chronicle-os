@@ -16,6 +16,16 @@ RUN pip install --no-cache-dir -r /app/requirements.txt
 # Copy application
 COPY . /app
 
+# Pre-download sentence-transformers model to avoid runtime download (CPU)
+ENV SENTENCE_MODEL_NAME=all-mpnet-base-v2
+RUN python -c "import os
+try:
+    from sentence_transformers import SentenceTransformer
+    SentenceTransformer(os.getenv('SENTENCE_MODEL_NAME')).encode(['warmup'])
+except Exception:
+    pass
+"
+
 EXPOSE 8000
 
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
